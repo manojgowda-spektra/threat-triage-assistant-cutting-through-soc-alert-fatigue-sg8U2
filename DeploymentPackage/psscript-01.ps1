@@ -430,7 +430,7 @@ try {
             }
             $status | ConvertTo-Json -Depth 6 | Set-Content -Path $statusPath -Encoding UTF8
             Copy-Item -Path $statusPath -Destination (Join-Path 'C:\Users\Public\Desktop' 'sentinel-playbook-permission-verification.json') -Force
-            throw "Unable to verify ARM-created Microsoft Sentinel Automation Contributor assignment at $scope for service principal objectId $expectedSpObjectId: $($_.Exception.Message)"
+            throw "Unable to verify ARM-created Microsoft Sentinel Automation Contributor assignment at $scope for service principal objectId ${expectedSpObjectId}: $($_.Exception.Message)"
         }
 
         $matchingAssignments = @($assignments | Where-Object {
@@ -842,7 +842,7 @@ SecurityAlert
                 }
                 $missing = @($expectedRules | Where-Object { -not $seen.ContainsKey($_) -or $seen[$_] -lt 1 })
                 $summary = if ($rows.Count -gt 0) { ($rows | ForEach-Object { "$($_.BaselineRule)=$($_.AlertCount)" }) -join '; ' } else { 'no matching SecurityAlert rows yet' }
-                Write-Log "SecurityAlert verification attempt $attempt of $MaxAttempts: $summary. Missing: $($missing -join ', ')"
+                Write-Log "SecurityAlert verification attempt $attempt of ${MaxAttempts}: $summary. Missing: $($missing -join ', ')"
                 if ($missing.Count -eq 0) {
                     $status = [ordered]@{
                         VerificationStatus = 'Succeeded'

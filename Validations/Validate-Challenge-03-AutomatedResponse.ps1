@@ -655,7 +655,7 @@ do {
             Status  = "Succeeded"
             Message = "Challenge 3 automated response learner-created end state is valid: Logic App '$($logicApp.Name)' is associated with precreated user-assigned identity '$($uami.Name)' resourceId '$($uami.ResourceId)' principalId '$uamiPrincipalId' clientId '$uamiClientId' and has no system-assigned identity; automation rule '$automationRuleDisplayName' is enabled for '$learnerRuleName' incidents only and references the playbook, confirming the required platform/facilitator Sentinel Automation Contributor authorization path is usable; successful run '$($successfulRun.Name)' occurred at '$($successfulRunTime.ToUniversalTime().ToString("o"))' after incident '$($latestIncident.name)'; NSG '$($nsg.Name)' has learner-created '$quarantineRuleName' with management access preserved by '$($managementAllowRules[0].Name)'; incident comment marker '$commentMarker' was found."
         } | ConvertTo-Json
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -668,7 +668,7 @@ do {
             Status  = "Failed"
             Message = $lastFailure
         } | ConvertTo-Json
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -682,7 +682,7 @@ if (-not $found) {
         Status  = "Failed"
         Message = "Challenge 3 automated response validation failed in RG '$rg' after 3 attempts. Last failure: $lastFailure"
     } | ConvertTo-Json
-    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
         Body       = $message
     })

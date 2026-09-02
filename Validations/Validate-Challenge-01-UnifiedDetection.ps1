@@ -361,7 +361,7 @@ SecurityIncident
             Status  = "Succeeded"
             Message = "Validated Challenge 1 unified detection in RG '$rg': DCR '$($dcr.Name)' is associated through '$($matchingAssociation.Name)', workspace '$($workspace.Name)' has SecurityEvent 4625 evidence for VM '$($vm.Name)', learner-created Sentinel alert rules are enabled, learner alert count is $($alertRows[0].AlertCount), and runtime Sentinel incident '$($validatedIncident.name)' has tag 'Challenge1-UnifiedDetection' plus comment '$($validatedComment.name)'."
         } | ConvertTo-Json -Depth 8
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -375,7 +375,7 @@ SecurityIncident
             Status  = "Failed"
             Message = "Error during check. Attempt $count of 3. $lastFailure Error: $($_.Exception.Message)"
         } | ConvertTo-Json -Depth 8
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -389,7 +389,7 @@ if (-not $found) {
         Status  = "Failed"
         Message = "Validate-Challenge-01-UnifiedDetection.ps1 did not find complete Challenge 1 learner runtime evidence in RG '$rg' after 3 attempts. Last failure: $lastFailure"
     } | ConvertTo-Json -Depth 8
-    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
         Body       = $message
     })

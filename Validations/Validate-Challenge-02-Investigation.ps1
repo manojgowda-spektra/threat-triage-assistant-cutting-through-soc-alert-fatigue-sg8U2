@@ -309,7 +309,7 @@ do {
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -343,7 +343,7 @@ SecurityIncident
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -367,7 +367,7 @@ SecurityAlert
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -386,7 +386,7 @@ SecurityAlert
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -415,7 +415,7 @@ SecurityAlert
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -449,7 +449,7 @@ SecurityAlert
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -465,7 +465,7 @@ SecurityAlert
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -489,7 +489,7 @@ SecurityAlert
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -536,7 +536,7 @@ AzureDiagnostics
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -566,7 +566,7 @@ AzureDiagnostics
                 Status  = "Failed"
                 Message = $lastFailure
             } | ConvertTo-Json
-            Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+            Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
                 StatusCode = [HttpStatusCode]::OK
                 Body       = $message
             })
@@ -580,7 +580,7 @@ AzureDiagnostics
             Status  = "Succeeded"
             Message = "Challenge 2 investigation validated. Seeded true-positive incident '$sentinelIncidentName' ('$sentinelIncidentTitle') from rule '$ruleName' has exact tag '$requiredTag', a comment containing marker '$requiredCommentMarker', evidence in tables '$($tablesWithEvidence -join ', ')', and learner-created hunting artifact count ($huntArtifactSummary) with prefix '$huntPrefix' in workspace '$workspaceName' (RG '$rg')."
         } | ConvertTo-Json
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -591,7 +591,7 @@ AzureDiagnostics
             Status  = "Failed"
             Message = $lastFailure
         } | ConvertTo-Json
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -605,7 +605,7 @@ if (-not $found) {
         Status  = "Failed"
         Message = "Validate-Challenge-02-Investigation.ps1 failed in RG '$rg' after 3 attempts. Last failure: $lastFailure"
     } | ConvertTo-Json
-    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
         Body       = $message
     })

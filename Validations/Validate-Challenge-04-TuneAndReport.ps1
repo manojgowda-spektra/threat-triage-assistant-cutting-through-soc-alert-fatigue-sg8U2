@@ -72,12 +72,12 @@ function Test-ExactExclusion {
 
     $linesWithLiteral = @($queryWithoutFullLineComments -split "`r?`n" | Where-Object { $_ -match $escapedLiteral })
     foreach ($line in $linesWithLiteral) {
-        if ($line -match "(?i)(!=|!~|!in\b|\bnot\s+in\b)[^`r`n|;]{0,250}['\"]$escapedLiteral['\"]") { return $true }
-        if ($line -match "(?i)['\"]$escapedLiteral['\"][^`r`n|;]{0,250}(\bnot\s+in\b|!in\b)") { return $true }
+        if ($line -match "(?i)(!=|!~|!in\b|\bnot\s+in\b)[^`r`n|;]{0,250}['`"]$escapedLiteral['`"]") { return $true }
+        if ($line -match "(?i)['`"]$escapedLiteral['`"][^`r`n|;]{0,250}(\bnot\s+in\b|!in\b)") { return $true }
     }
 
     $compactQuery = ($queryWithoutFullLineComments -replace '\s+', ' ')
-    if ($compactQuery -match "(?i)\bnot\s*\([^\)]{0,500}(==|=~|\bin\s*\()[^\)]{0,250}['\"]$escapedLiteral['\"][^\)]{0,500}\)") { return $true }
+    if ($compactQuery -match "(?i)\bnot\s*\([^\)]{0,500}(==|=~|\bin\s*\()[^\)]{0,250}['`"]$escapedLiteral['`"][^\)]{0,500}\)") { return $true }
     return $false
 }
 
@@ -333,7 +333,7 @@ print LatestIncidentCreated = LatestIncidentCreated, LatestNsgChange = LatestNsg
                 Message = "Challenge 4 tuning and reporting evidence was not found in RG '$rg'."
             } | ConvertTo-Json
         }
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -344,7 +344,7 @@ print LatestIncidentCreated = LatestIncidentCreated, LatestNsgChange = LatestNsg
             Status  = "Failed"
             Message = $lastFailure
         } | ConvertTo-Json
-        Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+        Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
             Body       = $message
         })
@@ -358,7 +358,7 @@ if (-not $found) {
         Status  = "Failed"
         Message = "Validate-Challenge-04-TuneAndReport.ps1 did not pass in RG '$rg' after 3 attempts. Last failure: $lastFailure"
     } | ConvertTo-Json
-    Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    Push-OutputBinding -Name Response -Clobber -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
         Body       = $message
     })

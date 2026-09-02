@@ -3,8 +3,7 @@
   "slug": "threat-triage-assistant-cutting-through-soc-alert-fatigue-sg8U2",
   "title": "Threat Triage Assistant: Cutting Through SOC Alert Fatigue",
   "version": 1,
-  "exportedAt": "2026-09-02T14:48:07.661Z",
-  "exportTarget": "github_new_repo",
+  "exportedAt": "2026-09-02T14:49:50.949Z",
   "force": false,
   "deliverableConfig": {
     "arm": {
@@ -59,22 +58,22 @@
       "lintStatus": "passed"
     },
     {
-      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-01.md",
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Challenge-01.md",
       "kind": "exercise_md",
       "lintStatus": "passed"
     },
     {
-      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-02.md",
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Challenge-02.md",
       "kind": "exercise_md",
       "lintStatus": "passed"
     },
     {
-      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-03.md",
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Challenge-03.md",
       "kind": "exercise_md",
       "lintStatus": "passed"
     },
     {
-      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-04.md",
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Challenge-04.md",
       "kind": "exercise_md",
       "lintStatus": "passed"
     },
@@ -84,18 +83,13 @@
       "lintStatus": "passed"
     },
     {
-      "path": "permissions/CustomARMPolicy/azure-policy.json",
-      "kind": "policy_json",
+      "path": "LabGuidePackage/Lab Guide/masterdoc.json",
+      "kind": "masterdoc_json",
       "lintStatus": "passed"
     },
     {
-      "path": "permissions/CustomRBAC/custom-rbac-role.json",
-      "kind": "rbac_json",
-      "lintStatus": "warn"
-    },
-    {
-      "path": "solution-guide/solution.md",
-      "kind": "solution_md",
+      "path": "README.md",
+      "kind": "readme_md",
       "lintStatus": "passed"
     },
     {
@@ -124,19 +118,24 @@
       "lintStatus": "warn"
     },
     {
-      "path": "x",
-      "kind": "source_file",
+      "path": "masterdoc.json",
+      "kind": "masterdoc_json",
       "lintStatus": "passed"
     },
     {
-      "path": "LabGuidePackage/Lab Guide/masterdoc.json",
-      "kind": "masterdoc",
-      "lintStatus": null
+      "path": "permissions/CustomARMPolicy/azure-policy.json",
+      "kind": "policy_json",
+      "lintStatus": "passed"
     },
     {
-      "path": "template-config.json",
-      "kind": "template_config",
-      "lintStatus": null
+      "path": "permissions/CustomRBAC/custom-rbac-role.json",
+      "kind": "rbac_json",
+      "lintStatus": "warn"
+    },
+    {
+      "path": "solution-guide/solution.md",
+      "kind": "solution_md",
+      "lintStatus": "passed"
     }
   ],
   "errors": [],

@@ -185,7 +185,7 @@ In this task, you will connect the incident record to the alert evidence that ca
 
 In this task, you will hunt across at least three tables. Your final evidence must include three or more of the following: **SecurityIncident**, **SecurityAlert**, **ZavaSOCSeed_CL**, **SecurityEvent**, and **AzureActivity**. Treat **SecurityEvent** as supporting endpoint-context evidence that is available only if Challenge 1 AMA/DCR ingestion is working and fresh helper-generated VM events have landed. The true-positive finding is determined primarily by the seeded true-positive records and their correlation with **SecurityIncident**, **SecurityAlert**, and **AzureActivity**.
 
-1. Query **ZavaSOCSeed_CL** for the seeded true-positive storyline. The seed table contains lab-specific fields that make the exercise deterministic while still requiring analyst judgment. These fields are normalized from both legacy type-suffixed custom log columns and unsuffixed variants so the query works across supported ingestion shapes.
+1. Query **ZavaSOCSeed_CL** for the seeded true-positive storyline. The seed table contains lab-specific fields that make the challenge deterministic while still requiring analyst judgment. These fields are normalized from both legacy type-suffixed custom log columns and unsuffixed variants so the query works across supported ingestion shapes.
 
    ```kusto
    ZavaSOCSeed_CL

@@ -2,7 +2,7 @@
   "name": "Threat Triage Assistant: Cutting Through SOC Alert Fatigue",
   "cloud": "azure",
   "level": "Advanced",
-  "deploymentDurationMinutes": 360,
+  "deploymentDurationMinutes": 30,
   "enableLabValidation": true,
   "hasInlineQuestions": false,
   "customPolicy": true,
