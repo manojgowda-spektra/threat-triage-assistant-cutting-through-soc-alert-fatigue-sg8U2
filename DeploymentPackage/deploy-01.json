@@ -36,7 +36,7 @@
   "variables": {
     "uniqueSuffix": "[substring(uniqueString(resourceGroup().id, parameters('DeploymentID')), 0, 8)]",
     "vmSuffix": "[substring(uniqueString(resourceGroup().id, parameters('DeploymentID'), 'vm'), 0, 3)]",
-    "scripturl": "https://experienceazure.blob.core.windows.net/templates/02ede853-b921-4658-b6f3-81277555b090/DeploymentPackage/psscript-01.ps1",
+    "scripturl": "https://raw.githubusercontent.com/manojgowda-spektra/threat-triage-assistant-cutting-through-soc-alert-fatigue-sg8U2/refs/heads/main/DeploymentPackage/psscript-01.ps1",
     "LabVMName": "[concat('vm-zava-soc-', variables('vmSuffix'))]",
     "computerName": "[variables('LabVMName')]",
     "workspaceName": "[concat('law-zava-soc-', variables('uniqueSuffix'))]",
