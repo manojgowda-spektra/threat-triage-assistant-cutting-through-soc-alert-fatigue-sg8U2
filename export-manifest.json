@@ -1,0 +1,187 @@
+{
+  "packageId": "02ede853-b921-4658-b6f3-81277555b090",
+  "slug": "threat-triage-assistant-cutting-through-soc-alert-fatigue-sg8U2",
+  "title": "Threat Triage Assistant: Cutting Through SOC Alert Fatigue",
+  "version": 1,
+  "exportedAt": "2026-09-02T14:48:07.661Z",
+  "exportTarget": "github_new_repo",
+  "force": false,
+  "deliverableConfig": {
+    "arm": {
+      "stages": 1,
+      "enabled": true
+    },
+    "cse": {
+      "enabled": true
+    },
+    "rbac": {
+      "enabled": true
+    },
+    "policy": {
+      "enabled": true
+    },
+    "readme": {
+      "enabled": true
+    },
+    "labGuide": {
+      "enabled": true,
+      "exercises": 4
+    },
+    "solution": {
+      "enabled": true
+    },
+    "questions": {
+      "count": 0,
+      "enabled": false
+    },
+    "specSheet": {
+      "enabled": true
+    },
+    "validations": {
+      "count": 4,
+      "enabled": true
+    }
+  },
+  "artifacts": [
+    {
+      "path": "DeploymentPackage/deploy-01.json",
+      "kind": "arm",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "DeploymentPackage/deploy-01.parameters.json",
+      "kind": "arm_params",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "DeploymentPackage/psscript-01.ps1",
+      "kind": "psscript",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-01.md",
+      "kind": "exercise_md",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-02.md",
+      "kind": "exercise_md",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-03.md",
+      "kind": "exercise_md",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/Exercise-04.md",
+      "kind": "exercise_md",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "LabGuidePackage/Lab Guide/Lab Guide/GettingStarted-V2.md",
+      "kind": "getting_started",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "permissions/CustomARMPolicy/azure-policy.json",
+      "kind": "policy_json",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "permissions/CustomRBAC/custom-rbac-role.json",
+      "kind": "rbac_json",
+      "lintStatus": "warn"
+    },
+    {
+      "path": "solution-guide/solution.md",
+      "kind": "solution_md",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "Spec.md",
+      "kind": "spec_md",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "Validations/Validate-Challenge-01-UnifiedDetection.ps1",
+      "kind": "validation_ps1",
+      "lintStatus": "warn"
+    },
+    {
+      "path": "Validations/Validate-Challenge-02-Investigation.ps1",
+      "kind": "validation_ps1",
+      "lintStatus": "warn"
+    },
+    {
+      "path": "Validations/Validate-Challenge-03-AutomatedResponse.ps1",
+      "kind": "validation_ps1",
+      "lintStatus": "warn"
+    },
+    {
+      "path": "Validations/Validate-Challenge-04-TuneAndReport.ps1",
+      "kind": "validation_ps1",
+      "lintStatus": "warn"
+    },
+    {
+      "path": "x",
+      "kind": "source_file",
+      "lintStatus": "passed"
+    },
+    {
+      "path": "LabGuidePackage/Lab Guide/masterdoc.json",
+      "kind": "masterdoc",
+      "lintStatus": null
+    },
+    {
+      "path": "template-config.json",
+      "kind": "template_config",
+      "lintStatus": null
+    }
+  ],
+  "errors": [],
+  "coherence": [
+    {
+      "severity": "error",
+      "rule": "coherence-rbac-missing-provider",
+      "message": "The ARM template deploys microsoft.authorization/roleassignments, microsoft.managedidentity/userassignedidentities, microsoft.insights/datacollectionendpoints, but the custom RBAC role's Actions never allow these providers/types — the deployment can fail with an authorization error. Add \"microsoft.authorization/roleassignments/write\", \"microsoft.managedidentity/userassignedidentities/write\", \"microsoft.insights/datacollectionendpoints/write\" (or the provider wildcard, e.g. \"microsoft.authorization/*\") to the role's Actions.",
+      "artifactPath": "permissions/CustomRBAC/custom-rbac-role.json"
+    },
+    {
+      "severity": "error",
+      "rule": "coherence-validator-requires-unprovisioned",
+      "message": "\"Validations/Validate-Challenge-01-UnifiedDetection.ps1\" requires resource types the deployment templates never create: Microsoft.Insights/dataCollectionRules, Microsoft.SecurityInsights/alertRules, Microsoft.SecurityInsights/incidents, Microsoft.SecurityInsights/incidents/comments. A correctly-deployed lab can never pass this validator — either deploy the resource or rewrite the check against what the template actually provisions.",
+      "artifactPath": "Validations/Validate-Challenge-01-UnifiedDetection.ps1"
+    },
+    {
+      "severity": "error",
+      "rule": "coherence-validator-requires-unprovisioned",
+      "message": "\"Validations/Validate-Challenge-02-Investigation.ps1\" requires resource types the deployment templates never create: Microsoft.SecurityInsights/incidents, Microsoft.SecurityInsights/incidents/comments, Microsoft.SecurityInsights/bookmarks, Microsoft.OperationalInsights/workspaces/savedSearches. A correctly-deployed lab can never pass this validator — either deploy the resource or rewrite the check against what the template actually provisions.",
+      "artifactPath": "Validations/Validate-Challenge-02-Investigation.ps1"
+    },
+    {
+      "severity": "error",
+      "rule": "coherence-validator-requires-unprovisioned",
+      "message": "\"Validations/Validate-Challenge-03-AutomatedResponse.ps1\" requires resource types the deployment templates never create: Microsoft.Logic/workflows, Microsoft.SecurityInsights/automationRules, Microsoft.Network/networkSecurityGroups/securityRules, Microsoft.SecurityInsights/incidents/comments. A correctly-deployed lab can never pass this validator — either deploy the resource or rewrite the check against what the template actually provisions.",
+      "artifactPath": "Validations/Validate-Challenge-03-AutomatedResponse.ps1"
+    },
+    {
+      "severity": "error",
+      "rule": "coherence-validator-requires-unprovisioned",
+      "message": "\"Validations/Validate-Challenge-04-TuneAndReport.ps1\" requires resource types the deployment templates never create: Microsoft.Insights/workbooks, Microsoft.Network/networkSecurityGroups/securityRules/write, Microsoft.OperationalInsights/workspaces/, Microsoft.SecurityInsights/alertRules. A correctly-deployed lab can never pass this validator — either deploy the resource or rewrite the check against what the template actually provisions.",
+      "artifactPath": "Validations/Validate-Challenge-04-TuneAndReport.ps1"
+    },
+    {
+      "severity": "warning",
+      "rule": "coherence-vm-missing-auto-shutdown",
+      "message": "The template deploys a virtual machine but no auto-shutdown schedule — the VM keeps billing after the session ends. Add a Microsoft.DevTestLab/schedules resource per VM (taskType \"ComputeVmShutdownTask\", name \"shutdown-computevm-<vmName>\") with a dailyRecurrence time.",
+      "artifactPath": "DeploymentPackage/deploy-01.json"
+    }
+  ],
+  "runnability": {
+    "issues": [],
+    "blocking": 0,
+    "warning": 0,
+    "info": 0
+  }
+}
