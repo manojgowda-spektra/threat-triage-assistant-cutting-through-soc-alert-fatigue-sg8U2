@@ -1,0 +1,39 @@
+{
+  "if": {
+    "field": "type",
+    "notIn": [
+      "Microsoft.Authorization/roleAssignments",
+      "Microsoft.Compute/disks",
+      "Microsoft.Compute/virtualMachines",
+      "Microsoft.Compute/virtualMachines/extensions",
+      "Microsoft.Insights/dataCollectionRuleAssociations",
+      "Microsoft.Insights/dataCollectionRules",
+      "Microsoft.Insights/diagnosticSettings",
+      "Microsoft.Insights/workbooks",
+      "Microsoft.Logic/workflows",
+      "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "Microsoft.Network/networkInterfaces",
+      "Microsoft.Network/networkSecurityGroups",
+      "Microsoft.Network/networkSecurityGroups/securityRules",
+      "Microsoft.Network/publicIPAddresses",
+      "Microsoft.Network/virtualNetworks",
+      "Microsoft.Network/virtualNetworks/subnets",
+      "Microsoft.OperationalInsights/workspaces",
+      "Microsoft.OperationalInsights/workspaces/savedSearches",
+      "Microsoft.OperationalInsights/workspaces/tables",
+      "Microsoft.OperationsManagement/solutions",
+      "Microsoft.Resources/deployments",
+      "Microsoft.SecurityInsights/alertRules",
+      "Microsoft.SecurityInsights/alertRules/actions",
+      "Microsoft.SecurityInsights/automationRules",
+      "Microsoft.SecurityInsights/bookmarks",
+      "Microsoft.SecurityInsights/incidents",
+      "Microsoft.SecurityInsights/incidents/comments",
+      "Microsoft.SecurityInsights/onboardingStates",
+      "Microsoft.Web/connections"
+    ]
+  },
+  "then": {
+    "effect": "deny"
+  }
+}

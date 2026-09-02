@@ -1,0 +1,29 @@
+[
+  {
+    "Name": "Threat Triage Assistant: Cutting Through SOC Alert Fatigue",
+    "Language": "English",
+    "BaseURL": "https://raw.githubusercontent.com/manojgowda-spektra/threat-triage-assistant-cutting-through-soc-alert-fatigue-sg8U2/main/LabGuidePackage/Lab%20Guide/Lab%20Guide/",
+    "Files": [
+      {
+        "RawFilePath": "GettingStarted-V2.md",
+        "Order": 1
+      },
+      {
+        "RawFilePath": "Exercise-01.md",
+        "Order": 2
+      },
+      {
+        "RawFilePath": "Exercise-02.md",
+        "Order": 3
+      },
+      {
+        "RawFilePath": "Exercise-03.md",
+        "Order": 4
+      },
+      {
+        "RawFilePath": "Exercise-04.md",
+        "Order": 5
+      }
+    ]
+  }
+]

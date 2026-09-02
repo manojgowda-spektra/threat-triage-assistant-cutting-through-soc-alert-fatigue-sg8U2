@@ -1,0 +1,564 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "azureUserName": {
+      "type": "string"
+    },
+    "azurePassword": {
+      "type": "securestring"
+    },
+    "ODLID": {
+      "type": "string"
+    },
+    "DeploymentID": {
+      "type": "string"
+    },
+    "adminUsername": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "trainerUserName": {
+      "type": "string"
+    },
+    "trainerUserPassword": {
+      "type": "securestring"
+    },
+    "azureSecurityInsightsServicePrincipalObjectId": {
+      "type": "string",
+      "metadata": {
+        "description": "Required tenant-local Object ID of the Azure Security Insights enterprise application. Microsoft Sentinel automation rules require this service account to have Microsoft Sentinel Automation Contributor on the resource group that contains playbooks. CloudLabs has no generic built-in placeholder for this tenant-specific Microsoft application object ID; the deployment parameter must be supplied by the platform or replaced with the tenant-local Azure Security Insights service principal Object ID before deployment."
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[substring(uniqueString(resourceGroup().id, parameters('DeploymentID')), 0, 8)]",
+    "vmSuffix": "[substring(uniqueString(resourceGroup().id, parameters('DeploymentID'), 'vm'), 0, 3)]",
+    "scripturl": "https://experienceazure.blob.core.windows.net/templates/02ede853-b921-4658-b6f3-81277555b090/DeploymentPackage/psscript-01.ps1",
+    "LabVMName": "[concat('vm-zava-soc-', variables('vmSuffix'))]",
+    "computerName": "[variables('LabVMName')]",
+    "workspaceName": "[concat('law-zava-soc-', variables('uniqueSuffix'))]",
+    "vnetName": "[concat('vnet-zava-soc-', variables('uniqueSuffix'))]",
+    "subnetName": "snet-workload",
+    "nsgName": "[concat('nsg-zava-workload-', variables('uniqueSuffix'))]",
+    "nicName": "[concat('nic-zava-soc-', variables('uniqueSuffix'))]",
+    "publicIpName": "[concat('pip-zava-soc-', variables('uniqueSuffix'))]",
+    "publicIpDnsLabel": "[toLower(concat('zava-soc-', variables('uniqueSuffix')))]",
+    "dceName": "[concat('dce-zava-securityevents-', variables('uniqueSuffix'))]",
+    "playbookManagedIdentityName": "[concat('id-zava-playbook-', variables('uniqueSuffix'))]",
+    "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+    "sentinelSolutionResourceId": "[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', variables('workspaceName'), ')'))]",
+    "playbookManagedIdentityResourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
+    "vmResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('LabVMName'))]",
+    "nsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+    "dceResourceId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', variables('dceName'))]",
+    "sentinelResponderRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3e150937-b8fe-4cfb-8069-0eaf05ecd056')]",
+    "sentinelAutomationContributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f4c81013-99ee-4d62-a7ee-b3f1f648599a')]",
+    "networkContributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4d97b98b-1d4f-4787-a291-c67834d212e7')]",
+    "vnetAddressPrefix": "10.50.0.0/16",
+    "subnetAddressPrefix": "10.50.1.0/24",
+    "cseCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File psscript-01.ps1 -AzureUserName \"', parameters('azureUserName'), '\" -AzurePassword \"', parameters('azurePassword'), '\" -AzureTenantID \"', tenant().tenantId, '\" -AzureSubscriptionID \"', subscription().subscriptionId, '\" -ODLID \"', parameters('ODLID'), '\" -InstallCloudLabsShadow \"true\" -DeploymentID \"', parameters('DeploymentID'), '\" -vmAdminUsername \"', parameters('adminUsername'), '\" -vmAdminPassword \"', parameters('adminPassword'), '\" -trainerUserName \"', parameters('trainerUserName'), '\" -trainerUserPassword \"', parameters('trainerUserPassword'), '\"')]",
+    "resourceTags": {
+      "cloudlabs-lab": "Threat Triage Assistant",
+      "cloudlabs-stage": "01",
+      "zava-purpose": "soc-sentinel-lab"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2025-07-01",
+      "name": "[variables('workspaceName')]",
+      "location": "[resourceGroup().location]",
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30,
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled",
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        },
+        "workspaceCapping": {
+          "dailyQuotaGb": 3
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationsManagement/solutions",
+      "apiVersion": "2015-11-01-preview",
+      "name": "[concat('SecurityInsights(', variables('workspaceName'), ')')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ],
+      "plan": {
+        "name": "[concat('SecurityInsights(', variables('workspaceName'), ')')]",
+        "publisher": "Microsoft",
+        "product": "OMSGallery/SecurityInsights",
+        "promotionCode": ""
+      },
+      "properties": {
+        "workspaceResourceId": "[variables('workspaceResourceId')]"
+      }
+    },
+    {
+      "type": "Microsoft.SecurityInsights/onboardingStates",
+      "apiVersion": "2025-09-01",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', variables('workspaceName'))]",
+      "name": "default",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+        "[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', variables('workspaceName'), ')'))]"
+      ],
+      "properties": {
+        "customerManagedKey": false
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceGroup().id, parameters('azureSecurityInsightsServicePrincipalObjectId'), variables('sentinelAutomationContributorRoleDefinitionId'))]",
+      "scope": "[resourceGroup().id]",
+      "dependsOn": [
+        "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
+      ],
+      "properties": {
+        "principalId": "[parameters('azureSecurityInsightsServicePrincipalObjectId')]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('sentinelAutomationContributorRoleDefinitionId')]",
+        "description": "Allows the Microsoft Sentinel service account to run learner-created playbooks in this lab resource group."
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2024-11-30",
+      "name": "[variables('playbookManagedIdentityName')]",
+      "location": "[resourceGroup().location]",
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "isolationScope": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('workspaceResourceId'), variables('playbookManagedIdentityResourceId'), variables('sentinelResponderRoleDefinitionId'))]",
+      "scope": "[variables('workspaceResourceId')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ],
+      "properties": {
+        "principalId": "[reference(variables('playbookManagedIdentityResourceId'), '2024-11-30').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('sentinelResponderRoleDefinitionId')]"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('sentinelSolutionResourceId'), variables('playbookManagedIdentityResourceId'), variables('sentinelResponderRoleDefinitionId'))]",
+      "scope": "[variables('sentinelSolutionResourceId')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
+        "[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', variables('workspaceName'), ')'))]"
+      ],
+      "properties": {
+        "principalId": "[reference(variables('playbookManagedIdentityResourceId'), '2024-11-30').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('sentinelResponderRoleDefinitionId')]"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionEndpoints",
+      "apiVersion": "2022-06-01",
+      "name": "[variables('dceName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "Windows",
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "description": "Zava SOC lab data collection endpoint for AMA readiness and learner DCR creation.",
+        "networkAcls": {
+          "publicNetworkAccess": "Enabled"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-01-01",
+      "name": "[variables('nsgName')]",
+      "location": "[resourceGroup().location]",
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-RDP-CloudLabs",
+            "properties": {
+              "description": "Allow RDP access for CloudLabs learner and VM Shadow connectivity.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "Internet",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Allow-Azure-Monitor-Outbound",
+            "properties": {
+              "description": "Allow outbound HTTPS for Azure Monitor Agent, Sentinel bootstrap, and CloudLabs setup.",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Outbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('nsgResourceId'), variables('playbookManagedIdentityResourceId'), variables('networkContributorRoleDefinitionId'))]",
+      "scope": "[variables('nsgResourceId')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "principalId": "[reference(variables('playbookManagedIdentityResourceId'), '2024-11-30').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('networkContributorRoleDefinitionId')]"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2022-01-01",
+      "name": "[variables('publicIpName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Static",
+        "idleTimeoutInMinutes": 4,
+        "dnsSettings": {
+          "domainNameLabel": "[variables('publicIpDnsLabel')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-01-01",
+      "name": "[variables('vnetName')]",
+      "location": "[resourceGroup().location]",
+      "tags": "[variables('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[variables('nsgResourceId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-01-01",
+      "name": "[variables('nicName')]",
+      "location": "[resourceGroup().location]",
+      "tags": "[variables('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
+              }
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[variables('nsgResourceId')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2022-11-01",
+      "name": "[variables('LabVMName')]",
+      "location": "[resourceGroup().location]",
+      "tags": "[variables('resourceTags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "plan": {
+        "name": "win2019",
+        "publisher": "spektra",
+        "product": "cloudlabs-windows-jumpvm"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B2s"
+        },
+        "osProfile": {
+          "computerName": "[variables('computerName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "windowsConfiguration": {
+            "provisionVMAgent": true,
+            "enableAutomaticUpdates": true
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "Spektra",
+            "offer": "cloudlabs-windows-jumpvm",
+            "sku": "win2019",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2022-11-01",
+      "name": "[concat(variables('LabVMName'), '/AzureMonitorWindowsAgent')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('LabVMName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Monitor",
+        "type": "AzureMonitorWindowsAgent",
+        "typeHandlerVersion": "1.0",
+        "autoUpgradeMinorVersion": true,
+        "enableAutomaticUpgrade": true,
+        "settings": {}
+      }
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "name": "diag-zava-nsg-to-law",
+      "scope": "[variables('nsgResourceId')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ],
+      "properties": {
+        "workspaceId": "[variables('workspaceResourceId')]",
+        "logs": [
+          {
+            "category": "NetworkSecurityGroupEvent",
+            "enabled": true
+          },
+          {
+            "category": "NetworkSecurityGroupRuleCounter",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2022-11-01",
+      "name": "[concat(variables('LabVMName'), '/CustomScriptExtension')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('LabVMName'))]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('LabVMName'), 'AzureMonitorWindowsAgent')]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+        "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "timestamp": "[int(substring(uniqueString(resourceGroup().id, parameters('DeploymentID'), deployment().name), 0, 8))]",
+          "fileUris": [
+            "[variables('scripturl')]"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute": "[variables('cseCommand')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "location": {
+      "type": "string",
+      "value": "[resourceGroup().location]"
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "value": "[variables('workspaceName')]"
+    },
+    "logAnalyticsWorkspaceResourceId": {
+      "type": "string",
+      "value": "[variables('workspaceResourceId')]"
+    },
+    "sentinelOnboardingStateResourceId": {
+      "type": "string",
+      "value": "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
+    },
+    "sentinelAutomationContributorRoleDefinitionId": {
+      "type": "string",
+      "value": "[variables('sentinelAutomationContributorRoleDefinitionId')]"
+    },
+    "azureSecurityInsightsServicePrincipalObjectId": {
+      "type": "string",
+      "value": "[parameters('azureSecurityInsightsServicePrincipalObjectId')]"
+    },
+    "playbookManagedIdentityName": {
+      "type": "string",
+      "value": "[variables('playbookManagedIdentityName')]"
+    },
+    "playbookManagedIdentityResourceId": {
+      "type": "string",
+      "value": "[variables('playbookManagedIdentityResourceId')]"
+    },
+    "playbookManagedIdentityPrincipalId": {
+      "type": "string",
+      "value": "[reference(variables('playbookManagedIdentityResourceId'), '2024-11-30').principalId]"
+    },
+    "labVmName": {
+      "type": "string",
+      "value": "[variables('LabVMName')]"
+    },
+    "labVmResourceId": {
+      "type": "string",
+      "value": "[variables('vmResourceId')]"
+    },
+    "vmServerName": {
+      "type": "string",
+      "value": "[variables('LabVMName')]"
+    },
+    "vmServerDnsName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName')), '2022-01-01').dnsSettings.fqdn]"
+    },
+    "vmServerUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+    },
+    "vmServerPassword": {
+      "type": "string",
+      "value": "[parameters('adminPassword')]"
+    },
+    "adminUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+    },
+    "adminPassword": {
+      "type": "string",
+      "value": "[parameters('adminPassword')]"
+    },
+    "trainerUserName": {
+      "type": "string",
+      "value": "[parameters('trainerUserName')]"
+    },
+    "trainerUserPassword": {
+      "type": "string",
+      "value": "[parameters('trainerUserPassword')]"
+    },
+    "networkSecurityGroupName": {
+      "type": "string",
+      "value": "[variables('nsgName')]"
+    },
+    "networkSecurityGroupResourceId": {
+      "type": "string",
+      "value": "[variables('nsgResourceId')]"
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "value": "[variables('vnetName')]"
+    },
+    "dataCollectionEndpointName": {
+      "type": "string",
+      "value": "[variables('dceName')]"
+    },
+    "dataCollectionEndpointResourceId": {
+      "type": "string",
+      "value": "[variables('dceResourceId')]"
+    },
+    "publicIpAddress": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName')), '2022-01-01').ipAddress]"
+    },
+    "publicDnsName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName')), '2022-01-01').dnsSettings.fqdn]"
+    },
+    "benignFalsePositiveAccount": {
+      "type": "string",
+      "value": "svc-zava-audit@zavacorp.example"
+    },
+    "benignFalsePositiveSourceIp": {
+      "type": "string",
+      "value": "198.51.100.23"
+    }
+  }
+}
