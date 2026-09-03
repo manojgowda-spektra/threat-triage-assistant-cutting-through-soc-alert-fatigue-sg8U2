@@ -123,7 +123,6 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "name": "[guid(resourceGroup().id, parameters('azureSecurityInsightsServicePrincipalObjectId'), variables('sentinelAutomationContributorRoleDefinitionId'))]",
-      "scope": "[resourceGroup().id]",
       "dependsOn": [
         "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
       ],
@@ -148,7 +147,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "name": "[guid(variables('workspaceResourceId'), variables('playbookManagedIdentityResourceId'), variables('sentinelResponderRoleDefinitionId'))]",
-      "scope": "[variables('workspaceResourceId')]",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', variables('workspaceName'))]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
@@ -163,7 +162,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "name": "[guid(variables('sentinelSolutionResourceId'), variables('playbookManagedIdentityResourceId'), variables('sentinelResponderRoleDefinitionId'))]",
-      "scope": "[variables('sentinelSolutionResourceId')]",
+      "scope": "[format('Microsoft.OperationsManagement/solutions/SecurityInsights({0})', variables('workspaceName'))]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
         "[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', variables('workspaceName'), ')'))]"
@@ -231,7 +230,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "name": "[guid(variables('nsgResourceId'), variables('playbookManagedIdentityResourceId'), variables('networkContributorRoleDefinitionId'))]",
-      "scope": "[variables('nsgResourceId')]",
+      "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', variables('nsgName'))]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('playbookManagedIdentityName'))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
@@ -396,7 +395,7 @@
       "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2021-05-01-preview",
       "name": "diag-zava-nsg-to-law",
-      "scope": "[variables('nsgResourceId')]",
+      "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', variables('nsgName'))]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
