@@ -84,7 +84,7 @@
           "enableLogAccessUsingOnlyResourcePermissions": true
         },
         "workspaceCapping": {
-          "dailyQuotaGb": 3
+          "dailyQuotaGb": 2
         }
       }
     },
@@ -107,26 +107,10 @@
       }
     },
     {
-      "type": "Microsoft.SecurityInsights/onboardingStates",
-      "apiVersion": "2025-09-01",
-      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', variables('workspaceName'))]",
-      "name": "default",
-      "dependsOn": [
-        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
-        "[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', variables('workspaceName'), ')'))]"
-      ],
-      "properties": {
-        "customerManagedKey": false
-      }
-    },
-    {
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "condition": "[and(not(empty(parameters('azureSecurityInsightsServicePrincipalObjectId'))), not(equals(parameters('azureSecurityInsightsServicePrincipalObjectId'), '00000000-0000-0000-0000-000000000000')))]",
       "name": "[guid(resourceGroup().id, parameters('azureSecurityInsightsServicePrincipalObjectId'), variables('sentinelAutomationContributorRoleDefinitionId'))]",
-      "dependsOn": [
-        "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
-      ],
       "properties": {
         "principalId": "[parameters('azureSecurityInsightsServicePrincipalObjectId')]",
         "principalType": "ServicePrincipal",
@@ -423,8 +407,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', variables('LabVMName'))]",
         "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('LabVMName'), 'AzureMonitorWindowsAgent')]",
-        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
-        "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
       ],
       "properties": {
         "publisher": "Microsoft.Compute",
