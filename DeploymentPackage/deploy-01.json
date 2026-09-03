@@ -59,12 +59,15 @@
     "networkContributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4d97b98b-1d4f-4787-a291-c67834d212e7')]",
     "vnetAddressPrefix": "10.50.0.0/16",
     "subnetAddressPrefix": "10.50.1.0/24",
-    "cseCommand": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File psscript-01.ps1 -AzureUserName \"', parameters('azureUserName'), '\" -AzurePassword \"', parameters('azurePassword'), '\" -AzureTenantID \"', tenant().tenantId, '\" -AzureSubscriptionID \"', subscription().subscriptionId, '\" -ODLID \"', parameters('ODLID'), '\" -InstallCloudLabsShadow \"true\" -DeploymentID \"', parameters('DeploymentID'), '\" -vmAdminUsername \"', parameters('adminUsername'), '\" -vmAdminPassword \"', parameters('adminPassword'), '\" -trainerUserName \"', parameters('trainerUserName'), '\" -trainerUserPassword \"', parameters('trainerUserPassword'), '\"')]",
+    "cseCommand": "[concat('powershell.exe -ExecutionPolicy ByPass -File psscript-01.ps1', variables('cloudlabsCommon'), variables('embeddedShadow'))]",
     "resourceTags": {
       "cloudlabs-lab": "Threat Triage Assistant",
       "cloudlabs-stage": "01",
       "zava-purpose": "soc-sentinel-lab"
-    }
+    },
+    "commonFunctionsUri": "https://experienceazure.blob.core.windows.net/templates/cloudlabs-common/cloudlabs-windows-functions.ps1",
+    "cloudlabsCommon": "[concat(' -AzureUserName \"', parameters('azureUserName'), '\" -AzurePassword \"', parameters('azurePassword'), '\" -AzureTenantID \"', tenant().tenantId, '\" -AzureSubscriptionID \"', subscription().subscriptionId, '\" -ODLID \"', parameters('ODLID'), '\" -DeploymentID \"', parameters('DeploymentID'), '\" -InstallCloudLabsShadow \"true\"')]",
+    "embeddedShadow": "[concat(' -vmAdminUsername \"', parameters('adminUsername'), '\" -vmAdminPassword \"', parameters('adminPassword'), '\" -trainerUserName \"', parameters('trainerUserName'), '\" -trainerUserPassword \"', parameters('trainerUserPassword'), '\"')]"
   },
   "resources": [
     {
@@ -417,6 +420,7 @@
         "settings": {
           "timestamp": "[int(parameters('DeploymentID'))]",
           "fileUris": [
+            "[variables('commonFunctionsUri')]",
             "[variables('scripturl')]"
           ]
         },
