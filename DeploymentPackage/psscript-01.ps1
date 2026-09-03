@@ -156,11 +156,33 @@ try {
     }
 
     function Connect-CloudLabsAzure {
-        Write-Log 'Signing in to Azure CLI with CloudLabs lab identity.'
-        Invoke-WithRetry -OperationName 'az login' -MaxAttempts 5 -DelaySeconds 30 -ScriptBlock {
-            Invoke-AzCli -Arguments @('login','--username',$AzureUserName,'--password',$AzurePassword,'--tenant',$AzureTenantID,'--output','none') | Out-Null
-            Invoke-AzCli -Arguments @('account','set','--subscription',$AzureSubscriptionID) | Out-Null
-        } | Out-Null
+        # Azure enforces MFA on public cloud, so a username/password sign-in is refused with
+        # AADSTS50076 and takes the whole bootstrap down. The VM carries a system-assigned managed
+        # identity with Owner on this resource group, granted by the ARM template, so sign in as
+        # that instead. It needs no secret and is unaffected by MFA.
+        Write-Log 'Signing in to Azure CLI with the VM managed identity.'
+        $signedIn = $false
+        try {
+            Invoke-WithRetry -OperationName 'az login --identity' -MaxAttempts 5 -DelaySeconds 30 -ScriptBlock {
+                Invoke-AzCli -Arguments @('login','--identity','--output','none') | Out-Null
+                Invoke-AzCli -Arguments @('account','set','--subscription',$AzureSubscriptionID) | Out-Null
+            } | Out-Null
+            $signedIn = $true
+            Write-Log 'Signed in with the VM managed identity.'
+        }
+        catch {
+            Write-Log "WARNING: Managed identity sign-in failed: $($_.Exception.Message)"
+        }
+
+        if (-not $signedIn) {
+            # Kept only for tenants where MFA is not enforced. Expected to fail where it is.
+            Write-Log 'Falling back to the lab user credentials.'
+            Invoke-WithRetry -OperationName 'az login (user)' -MaxAttempts 3 -DelaySeconds 30 -ScriptBlock {
+                Invoke-AzCli -Arguments @('login','--username',$AzureUserName,'--password',$AzurePassword,'--tenant',$AzureTenantID,'--output','none') | Out-Null
+                Invoke-AzCli -Arguments @('account','set','--subscription',$AzureSubscriptionID) | Out-Null
+            } | Out-Null
+            Write-Log 'Signed in with the lab user credentials.'
+        }
     }
 
     function Get-InstanceMetadata {
