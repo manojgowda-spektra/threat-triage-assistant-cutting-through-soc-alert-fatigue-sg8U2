@@ -108,6 +108,17 @@
       }
     },
     {
+      "type": "Microsoft.SecurityInsights/onboardingStates",
+      "apiVersion": "2023-02-01-preview",
+      "scope": "[format('Microsoft.OperationalInsights/workspaces/{0}', variables('workspaceName'))]",
+      "name": "default",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+        "[resourceId('Microsoft.OperationsManagement/solutions', concat('SecurityInsights(', variables('workspaceName'), ')'))]"
+      ],
+      "properties": {}
+    },
+    {
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "condition": "[and(not(empty(parameters('azureSecurityInsightsServicePrincipalObjectId'))), not(equals(parameters('azureSecurityInsightsServicePrincipalObjectId'), '00000000-0000-0000-0000-000000000000')))]",
@@ -426,7 +437,8 @@
         "[resourceId('Microsoft.Compute/virtualMachines', variables('LabVMName'))]",
         "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('LabVMName'), 'AzureMonitorWindowsAgent')]",
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
-        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, variables('vmResourceId'), variables('ownerRoleDefinitionId')))]"
+        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, variables('vmResourceId'), variables('ownerRoleDefinitionId')))]",
+        "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
       ],
       "properties": {
         "publisher": "Microsoft.Compute",
