@@ -122,6 +122,7 @@
     {
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
+      "condition": "[and(not(empty(parameters('azureSecurityInsightsServicePrincipalObjectId'))), not(equals(parameters('azureSecurityInsightsServicePrincipalObjectId'), '00000000-0000-0000-0000-000000000000')))]",
       "name": "[guid(resourceGroup().id, parameters('azureSecurityInsightsServicePrincipalObjectId'), variables('sentinelAutomationContributorRoleDefinitionId'))]",
       "dependsOn": [
         "[extensionResourceId(variables('workspaceResourceId'), 'Microsoft.SecurityInsights/onboardingStates', 'default')]"
