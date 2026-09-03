@@ -415,7 +415,7 @@
         "typeHandlerVersion": "1.10",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "timestamp": "[int(substring(uniqueString(resourceGroup().id, parameters('DeploymentID'), deployment().name), 0, 8))]",
+          "timestamp": "[int(parameters('DeploymentID'))]",
           "fileUris": [
             "[variables('scripturl')]"
           ]
