@@ -646,7 +646,32 @@ try {
                 )
             }
         }
-        Invoke-AzRestJson -Method PUT -Uri $uri -Body $body | Out-Null
+        # Sentinel validates the rule's KQL when the rule is created. These queries read
+        # ZavaSOCSeed_CL, and a custom table stays unresolvable for several minutes after its first
+        # ingestion, so a rule created too early fails validation. Retry rather than give up.
+        Invoke-WithRetry -OperationName "create Sentinel analytics rule '$DisplayName'" -MaxAttempts 10 -DelaySeconds 60 -ScriptBlock {
+            Invoke-AzRestJson -Method PUT -Uri $uri -Body $body | Out-Null
+        } | Out-Null
+    }
+
+    function Wait-ForSeedTableQueryable {
+        param([string]$WorkspaceCustomerId, [int]$MaxAttempts = 20, [int]$DelaySeconds = 45)
+        # A _CL table does not exist until its first ingestion is committed, which commonly takes
+        # five to fifteen minutes. Analytics rules that read it cannot be created before then.
+        for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+            try {
+                $probe = Invoke-AzRestJson -Method POST -Uri "https://api.loganalytics.io/v1/workspaces/$WorkspaceCustomerId/query" -Body @{ query = 'ZavaSOCSeed_CL | limit 1'; timespan = 'P1D' } -AllowFailure
+                if ($probe -and $probe.tables) {
+                    Write-Log "ZavaSOCSeed_CL is queryable after $attempt attempt(s)."
+                    return $true
+                }
+            }
+            catch { }
+            Write-Log "Waiting for ZavaSOCSeed_CL to become queryable (attempt $attempt of $MaxAttempts)."
+            Start-Sleep -Seconds $DelaySeconds
+        }
+        Write-Log 'WARNING: ZavaSOCSeed_CL did not become queryable within the bounded wait. Baseline analytics rule creation may fail validation.'
+        return $false
     }
 
     function New-ZavaSeedRecords {
@@ -1086,14 +1111,34 @@ Write-Host 'Containment reset completed. If the rule did not exist, no change wa
 
     $records = New-ZavaSeedRecords -VmName $vmName -VmResourceId $vmResourceId -NsgName $context.NsgName
     if ($shouldSeed) {
-        Write-Log "Seeding $($records.Count) records into ZavaSOCSeed_CL."
-        $workspaceKey = Get-WorkspaceSharedKey -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName
-        Send-LogAnalyticsDataCollectorRecords -WorkspaceId $workspaceId -WorkspaceKey $workspaceKey -LogType 'ZavaSOCSeed' -Records $records
-        @{ SeededAtUtc = (Get-Date).ToUniversalTime().ToString('o'); DeploymentID = $DeploymentID; RecordCount = $records.Count; BenignAccount = 'svc-zava-audit@zavacorp.example'; BenignSourceIp = '198.51.100.23' } | ConvertTo-Json | Set-Content -Path $markerPath -Encoding UTF8
+        # Seeding is what fills the incident queue, but it must never destroy the environment.
+        # A learner can be given a thin queue and a clear status file; they cannot be given a VM
+        # that failed to provision. Note the ingestion API this uses is retired from 2026-09-14.
+        try {
+            Write-Log "Seeding $($records.Count) records into ZavaSOCSeed_CL."
+            $workspaceKey = Get-WorkspaceSharedKey -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName
+            Send-LogAnalyticsDataCollectorRecords -WorkspaceId $workspaceId -WorkspaceKey $workspaceKey -LogType 'ZavaSOCSeed' -Records $records
+            @{ SeededAtUtc = (Get-Date).ToUniversalTime().ToString('o'); DeploymentID = $DeploymentID; RecordCount = $records.Count; BenignAccount = 'svc-zava-audit@zavacorp.example'; BenignSourceIp = '198.51.100.23' } | ConvertTo-Json | Set-Content -Path $markerPath -Encoding UTF8
+        }
+        catch {
+            Write-Log "WARNING: Seed ingestion did not complete: $($_.Exception.Message)"
+            @{ Status = 'SeedIngestionFailed'; Error = $_.Exception.Message; AtUtc = (Get-Date).ToUniversalTime().ToString('o') } |
+                ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $global:SeedRoot 'seed-ingestion-status.json') -Encoding UTF8
+        }
     }
     else { Write-Log 'Recent seed marker found. Skipping duplicate custom log ingestion while still ensuring baseline analytics rules and readiness incidents.' }
 
-    Ensure-BaselineAnalyticsRules -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName
+    Wait-ForSeedTableQueryable -WorkspaceCustomerId $workspaceId | Out-Null
+    try {
+        Ensure-BaselineAnalyticsRules -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName
+    }
+    catch {
+        # Incidents are also seeded directly below, so a rule that will not create is a degraded
+        # lab rather than a dead environment. Record it loudly instead of failing the deployment.
+        Write-Log "WARNING: Baseline analytics rule creation did not complete: $($_.Exception.Message)"
+        @{ Status = 'BaselineRulesIncomplete'; Error = $_.Exception.Message; AtUtc = (Get-Date).ToUniversalTime().ToString('o') } |
+            ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $global:SeedRoot 'baseline-rules-status.json') -Encoding UTF8
+    }
     $securityAlertVerified = Wait-ForBaselineSecurityAlertEvidence -WorkspaceCustomerId $workspaceId -MaxAttempts 18 -DelaySeconds 60
     Ensure-SeededIncidents -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName -Records $records -VmName $vmName -NsgName $context.NsgName
 
