@@ -142,7 +142,10 @@ try {
         $tempFile = $null
         if ($null -ne $Body) {
             $tempFile = Join-Path $env:TEMP ("azbody-{0}.json" -f ([guid]::NewGuid().Guid))
-            $Body | ConvertTo-Json -Depth 30 | Set-Content -Path $tempFile -Encoding UTF8
+            # Set-Content -Encoding UTF8 emits a byte order mark on Windows PowerShell 5.1, and ARM
+            # rejects a request body that starts with one as malformed JSON. Write it without.
+            $bodyJson = $Body | ConvertTo-Json -Depth 30
+            [System.IO.File]::WriteAllText($tempFile, $bodyJson, (New-Object System.Text.UTF8Encoding $false))
             $args += @('--body', "@$tempFile")
         }
         try {
