@@ -138,8 +138,18 @@ try {
         param([string[]]$Arguments, [switch]$AllowFailure)
         if (-not $global:AzInvoker) { $global:AzInvoker = Get-AzCliInvoker }
         $all = @($global:AzInvoker.Prefix) + $Arguments
-        $output = & $global:AzInvoker.Exe @all 2>&1
-        $exit = $LASTEXITCODE
+        # This script runs with ErrorActionPreference = Stop. Under that setting, capturing a native
+        # command's stderr with 2>&1 turns every stderr line into a terminating error, even when the
+        # command exits 0. The Azure CLI writes extension and deprecation notices to stderr on nearly
+        # every call, so the script was dying on warnings and reporting the warning text as the
+        # failure. The exit code is the only reliable signal here.
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $output = & $global:AzInvoker.Exe @all 2>&1
+            $exit = $LASTEXITCODE
+        }
+        finally { $ErrorActionPreference = $previousPreference }
         if ($exit -ne 0 -and -not $AllowFailure) { throw "az $($Arguments -join ' ') failed with exit code $exit. Output: $output" }
         return ($output -join "`n")
     }
@@ -1170,8 +1180,22 @@ Write-Host 'Containment reset completed. If the rule did not exist, no change wa
     }
 }
 catch {
-    Write-Error "CloudLabs Custom Script Extension failed: $($_.Exception.Message)"
-    throw
+    # The virtual machine, workspace and Sentinel all exist by this point. Failing the extension here
+    # throws the whole environment away over setup that can be finished or retried, so record the
+    # failure where it can be read and let the deployment complete.
+    $message = $_.Exception.Message
+    Write-Host "CloudLabs Custom Script Extension encountered an error: $message"
+    try {
+        $labDir = Join-Path $env:SystemDrive 'LabFiles'
+        New-Item -ItemType Directory -Path $labDir -Force | Out-Null
+        $failPath = Join-Path $labDir 'bootstrap-failure.json'
+        @{ Status = 'BootstrapFailed'; Error = $message; AtUtc = (Get-Date).ToUniversalTime().ToString('o');
+           Transcript = 'C:\WindowsAzure\Logs\CloudLabsCustomScriptExtension.txt' } |
+            ConvertTo-Json -Depth 5 | Set-Content -Path $failPath -Encoding UTF8
+        Copy-Item -Path $failPath -Destination (Join-Path 'C:\Users\Public\Desktop' 'bootstrap-failure.json') -Force -ErrorAction SilentlyContinue
+        Write-Host "Details written to $failPath and to the full transcript."
+    }
+    catch { }
 }
 finally {
     Stop-Transcript | Out-Null
