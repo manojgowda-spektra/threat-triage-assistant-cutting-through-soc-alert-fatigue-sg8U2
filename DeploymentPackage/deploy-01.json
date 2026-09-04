@@ -94,6 +94,7 @@
     "AzureSubscriptionID": "[subscription().subscriptionId]",
     "AzureTenantID": "[subscription().tenantId]",
     "cloudlabsFunctionsUrl": "https://experienceazure.blob.core.windows.net/templates/cloudlabs-common/cloudlabs-windows-functions.ps1",
+    "launcherUrl": "https://raw.githubusercontent.com/manojgowda-spektra/threat-triage-assistant-cutting-through-soc-alert-fatigue-sg8U2/refs/heads/main/DeploymentPackage/psscript-launcher.ps1",
     "cloudlabsCommon": "[concat(' -AzureUserName \"', parameters('AzureUserName'), '\" -AzurePassword \"', parameters('AzurePassword'), '\" -AzureTenantID \"', variables('AzureTenantID'), '\" -AzureSubscriptionID \"', variables('AzureSubscriptionID'), '\" -ODLID \"', parameters('ODLID'), '\" -DeploymentID \"', parameters('DeploymentID'), '\" -InstallCloudLabsShadow \"', parameters('InstallCloudLabsShadow'), '\"')]",
     "Enable-CloudLabsEmbeddedShadow": "[concat(' -vmAdminUsername \"', parameters('adminUsername'), '\" -vmAdminPassword \"', parameters('adminPassword'), '\" -trainerUserName \"', parameters('trainerUserName'), '\" -trainerUserPassword \"', parameters('trainerUserPassword'), '\"')]"
   },
@@ -492,11 +493,12 @@
           "timestamp": "[parameters('DeploymentID')]",
           "fileUris": [
             "[variables('cloudlabsFunctionsUrl')]",
-            "[variables('scripturl')]"
+            "[variables('scripturl')]",
+            "[variables('launcherUrl')]"
           ]
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File psscript-01.ps1', variables('cloudlabsCommon'), variables('Enable-CloudLabsEmbeddedShadow'))]"
+          "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File psscript-launcher.ps1', variables('cloudlabsCommon'), variables('Enable-CloudLabsEmbeddedShadow'))]"
         }
       },
       "tags": {
