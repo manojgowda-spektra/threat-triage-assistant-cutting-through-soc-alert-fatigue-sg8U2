@@ -2,32 +2,41 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "azureUserName": {
+    "adminUsername": {
+      "value": "demouser"
+    },
+    "adminPassword": {
+      "value": "GEN-PASSWORD"
+    },
+    "AzureUserName": {
       "value": "GET-AZUSER-UPN"
     },
-    "azurePassword": {
+    "AzurePassword": {
       "value": "GET-AZUSER-PASSWORD"
     },
     "ODLID": {
       "value": "GET-ODL-ID"
     },
+    "azuserobjectid": {
+      "value": "GET-AZUSER-OBJECTID"
+    },
     "DeploymentID": {
       "value": "GET-DEPLOYMENT-ID"
     },
-    "adminUsername": {
-      "value": "azureuser"
-    },
-    "adminPassword": {
-      "value": "GEN-PASSWORD"
+    "InstallCloudLabsShadow": {
+      "value": "yes"
     },
     "trainerUserName": {
-      "value": "instructor"
+      "value": "trainer"
     },
     "trainerUserPassword": {
       "value": "GEN-PASSWORD"
     },
     "azureSecurityInsightsServicePrincipalObjectId": {
       "value": "00000000-0000-0000-0000-000000000000"
+    },
+    "emailId": {
+      "value": "GET-USER-EMAIL-ID"
     }
   }
 }
