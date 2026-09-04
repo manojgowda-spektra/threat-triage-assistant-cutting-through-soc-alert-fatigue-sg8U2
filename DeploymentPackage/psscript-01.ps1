@@ -648,7 +648,7 @@ try {
             [hashtable]$CustomDetails = @{}
         )
         $ruleId = Get-DeterministicGuid -InputString "zava-sentinel-rule-$DeploymentID-$DisplayName"
-        $uri = "https://management.azure.com/subscriptions/$AzureSubscriptionID/resourceGroups/$ResourceGroupName/providers/Microsoft.OperationalInsights/workspaces/$WorkspaceName/providers/Microsoft.SecurityInsights/alertRules/$ruleId?api-version=2023-02-01-preview"
+        $uri = "https://management.azure.com/subscriptions/$AzureSubscriptionID/resourceGroups/$ResourceGroupName/providers/Microsoft.OperationalInsights/workspaces/$WorkspaceName/providers/Microsoft.SecurityInsights/alertRules/${ruleId}?api-version=2023-02-01-preview"
         $body = @{
             kind = 'Scheduled'
             properties = @{
@@ -850,7 +850,7 @@ BenignAccount: $($row.BenignAccount)
 BenignSourceIp: $($row.BenignSourceIp)
 EvidenceHint: Query ZavaSOCSeed_CL, AzureActivity, SecurityIncident, SecurityAlert, and SecurityEvent.
 "@
-                $uri = "https://management.azure.com/subscriptions/$AzureSubscriptionID/resourceGroups/$ResourceGroupName/providers/Microsoft.OperationalInsights/workspaces/$WorkspaceName/providers/Microsoft.SecurityInsights/incidents/$incidentId?api-version=2024-03-01"
+                $uri = "https://management.azure.com/subscriptions/$AzureSubscriptionID/resourceGroups/$ResourceGroupName/providers/Microsoft.OperationalInsights/workspaces/$WorkspaceName/providers/Microsoft.SecurityInsights/incidents/${incidentId}?api-version=2024-03-01"
                 $body = @{
                     properties = @{
                         title = $title
@@ -868,7 +868,7 @@ EvidenceHint: Query ZavaSOCSeed_CL, AzureActivity, SecurityIncident, SecurityAle
                 }
                 Invoke-AzRestJson -Method PUT -Uri $uri -Body $body -AllowFailure | Out-Null
                 $commentId = Get-DeterministicGuid -InputString "zava-seeded-comment-$DeploymentID-$ruleName-$i"
-                $commentUri = "https://management.azure.com/subscriptions/$AzureSubscriptionID/resourceGroups/$ResourceGroupName/providers/Microsoft.OperationalInsights/workspaces/$WorkspaceName/providers/Microsoft.SecurityInsights/incidents/$incidentId/comments/$commentId?api-version=2024-03-01"
+                $commentUri = "https://management.azure.com/subscriptions/$AzureSubscriptionID/resourceGroups/$ResourceGroupName/providers/Microsoft.OperationalInsights/workspaces/$WorkspaceName/providers/Microsoft.SecurityInsights/incidents/$incidentId/comments/${commentId}?api-version=2024-03-01"
                 $commentText = if ($isTp) { 'Seed context: this incident is the hidden true positive. Correlate source IP 203.0.113.77, VM access failures, and NSG change evidence before containment.' } else { 'Seed context: likely noisy scenario. Administrative enumeration tuning must preserve detections except benign account svc-zava-audit@zavacorp.example and source IP 198.51.100.23.' }
                 Invoke-AzRestJson -Method PUT -Uri $commentUri -Body @{ properties = @{ message = $commentText } } -AllowFailure | Out-Null
             }
@@ -879,7 +879,7 @@ EvidenceHint: Query ZavaSOCSeed_CL, AzureActivity, SecurityIncident, SecurityAle
         param([string]$ResourceGroupName, [string]$WorkspaceName)
         Write-Log 'Ensuring baseline Microsoft Sentinel analytics rules exist and are enabled with a bounded recent seed window, SingleAlert event grouping, incident grouping, and rule suppression to avoid repeated seeded alerts.'
         $baseProjection = @'
-| extend Account=tostring(Account_s), SourceIp=tostring(SourceIp_s), VmName=tostring(VmName_s), ResourceId=tostring(ResourceId_s), ZavaCaseId=tostring(ZavaCaseId_s), ScenarioType=tostring(ScenarioType_s), OperationName=tostring(OperationName_s), ResultType=tostring(ResultType_s), AlertSummary=tostring(AlertSummary_s), MitreTactic=tostring(MitreTactic_s), NoiseGroup=tostring(NoiseGroup_s), IsTruePositive=tobool(IsTruePositive_b)
+| extend Account=tostring(column_ifexists("Account_s", column_ifexists("Account", ""))), SourceIp=tostring(column_ifexists("SourceIp_s", column_ifexists("SourceIP", ""))), VmName=tostring(column_ifexists("VmName_s", column_ifexists("VmName", ""))), ResourceId=tostring(column_ifexists("ResourceId_s", column_ifexists("ResourceId", ""))), ZavaCaseId=tostring(column_ifexists("ZavaCaseId_s", column_ifexists("ZavaCaseId", ""))), ScenarioType=tostring(column_ifexists("ScenarioType_s", column_ifexists("ScenarioType", ""))), OperationName=tostring(column_ifexists("OperationName_s", column_ifexists("OperationName", ""))), ResultType=tostring(column_ifexists("ResultType_s", column_ifexists("ResultType", ""))), AlertSummary=tostring(column_ifexists("AlertSummary_s", column_ifexists("AlertSummary", ""))), MitreTactic=tostring(column_ifexists("MitreTactic_s", column_ifexists("MitreTactic", ""))), NoiseGroup=tostring(column_ifexists("NoiseGroup_s", column_ifexists("NoiseGroup", ""))), IsTruePositive=tobool(column_ifexists("IsTruePositive_b", false))
 | project TimeGenerated, Account, SourceIp, VmName, ResourceId, ZavaCaseId, ScenarioType, OperationName, ResultType, AlertSummary, MitreTactic, NoiseGroup, IsTruePositive
 '@
         Ensure-SentinelAnalyticsRule -ResourceGroupName $ResourceGroupName -WorkspaceName $WorkspaceName -DisplayName 'ZAVA-Noise-Repeated-Policy-Change' -Severity 'Low' -Tactics @('DefenseEvasion') -Techniques @('T1484') -CustomDetails @{ ZavaCaseId='ZavaCaseId'; ScenarioType='ScenarioType'; NoiseGroup='NoiseGroup' } -Query @"
@@ -909,7 +909,7 @@ ZavaSOCSeed_CL
 | where RuleName_s == 'ZAVA-Noise-Failed-Storage-Access'
 $baseProjection
 "@
-        Ensure-SentinelAnalyticsRule -ResourceGroupName $ResourceGroupName -WorkspaceName $WorkspaceName -DisplayName 'ZAVA-TruePositive-Suspicious-VM-Access-And-NSG-Change' -Severity 'High' -Tactics @('InitialAccess','Execution','DefenseEvasion') -Techniques @('T1110','T1059','T1562') -CustomDetails @{ ZavaCaseId='ZavaCaseId'; ScenarioType='ScenarioType'; OperationName='OperationName'; IsTruePositive='IsTruePositive' } -Query @"
+        Ensure-SentinelAnalyticsRule -ResourceGroupName $ResourceGroupName -WorkspaceName $WorkspaceName -DisplayName 'ZAVA-TruePositive-Suspicious-VM-Access-And-NSG-Change' -Severity 'High' -Tactics @('InitialAccess','CredentialAccess','Execution','DefenseEvasion') -Techniques @('T1110','T1059','T1562') -CustomDetails @{ ZavaCaseId='ZavaCaseId'; ScenarioType='ScenarioType'; OperationName='OperationName'; IsTruePositive='IsTruePositive' } -Query @"
 let ZavaSeedWindowStart = ago(12h);
 let ZavaSeedWindowEnd = now();
 ZavaSOCSeed_CL

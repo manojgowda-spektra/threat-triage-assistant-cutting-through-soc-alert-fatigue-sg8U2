@@ -39,7 +39,7 @@ function Get-ArmResourceById {
         [Parameter(Mandatory = $true)][string]$ApiVersion
     )
 
-    $response = Invoke-AzRestMethod -Method GET -Path "$ResourceId?api-version=$ApiVersion" -ErrorAction Stop
+    $response = Invoke-AzRestMethod -Method GET -Path "${ResourceId}?api-version=$ApiVersion" -ErrorAction Stop
     if ([string]::IsNullOrWhiteSpace($response.Content)) { return $null }
     return ($response.Content | ConvertFrom-Json -Depth 100)
 }
