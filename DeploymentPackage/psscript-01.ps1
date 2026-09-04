@@ -679,13 +679,13 @@ try {
         # Sentinel validates the rule's KQL when the rule is created. These queries read
         # ZavaSOCSeed_CL, and a custom table stays unresolvable for several minutes after its first
         # ingestion, so a rule created too early fails validation. Retry rather than give up.
-        Invoke-WithRetry -OperationName "create Sentinel analytics rule '$DisplayName'" -MaxAttempts 10 -DelaySeconds 60 -ScriptBlock {
+        Invoke-WithRetry -OperationName "create Sentinel analytics rule '$DisplayName'" -MaxAttempts 5 -DelaySeconds 30 -ScriptBlock {
             Invoke-AzRestJson -Method PUT -Uri $uri -Body $body | Out-Null
         } | Out-Null
     }
 
     function Wait-ForSeedTableQueryable {
-        param([string]$WorkspaceCustomerId, [int]$MaxAttempts = 20, [int]$DelaySeconds = 45)
+        param([string]$WorkspaceCustomerId, [int]$MaxAttempts = 12, [int]$DelaySeconds = 30)
         # A _CL table does not exist until its first ingestion is committed, which commonly takes
         # five to fifteen minutes. Analytics rules that read it cannot be created before then.
         for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
@@ -1169,7 +1169,7 @@ Write-Host 'Containment reset completed. If the rule did not exist, no change wa
         @{ Status = 'BaselineRulesIncomplete'; Error = $_.Exception.Message; AtUtc = (Get-Date).ToUniversalTime().ToString('o') } |
             ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $global:SeedRoot 'baseline-rules-status.json') -Encoding UTF8
     }
-    $securityAlertVerified = Wait-ForBaselineSecurityAlertEvidence -WorkspaceCustomerId $workspaceId -MaxAttempts 18 -DelaySeconds 60
+    $securityAlertVerified = Wait-ForBaselineSecurityAlertEvidence -WorkspaceCustomerId $workspaceId -MaxAttempts 8 -DelaySeconds 60
     Ensure-SeededIncidents -ResourceGroupName $resourceGroupName -WorkspaceName $workspaceName -Records $records -VmName $vmName -NsgName $context.NsgName
 
     if ($securityAlertVerified) {
