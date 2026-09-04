@@ -116,9 +116,29 @@ try {
         Write-Log "Using Azure CLI at $((Get-Command az).Source)."
     }
 
+    function Get-AzCliInvoker {
+        # az on Windows is az.cmd, a batch wrapper that forwards everything through cmd.exe with %*.
+        # cmd treats parentheses as grouping, and the Sentinel solution resource is literally named
+        # SecurityInsights(<workspace>), so its URI ends the group early and cmd then reads the rest
+        # as a command: "?api-version was unexpected at this time". Call the CLI's own python entry
+        # point instead, which is what az.cmd runs anyway, so no argument is ever seen by cmd.
+        $azCmd = (Get-Command az -ErrorAction SilentlyContinue).Source
+        if ($azCmd) {
+            $py = Join-Path (Split-Path (Split-Path $azCmd -Parent) -Parent) 'python.exe'
+            if (Test-Path $py) {
+                Write-Log "Using the Azure CLI python entry point directly: $py"
+                return @{ Exe = $py; Prefix = @('-IBm','azure.cli') }
+            }
+        }
+        Write-Log 'WARNING: Could not find the Azure CLI python entry point. Falling back to az, which re-parses arguments through cmd.exe.'
+        return @{ Exe = 'az'; Prefix = @() }
+    }
+
     function Invoke-AzCli {
         param([string[]]$Arguments, [switch]$AllowFailure)
-        $output = & az @Arguments 2>&1
+        if (-not $global:AzInvoker) { $global:AzInvoker = Get-AzCliInvoker }
+        $all = @($global:AzInvoker.Prefix) + $Arguments
+        $output = & $global:AzInvoker.Exe @all 2>&1
         $exit = $LASTEXITCODE
         if ($exit -ne 0 -and -not $AllowFailure) { throw "az $($Arguments -join ' ') failed with exit code $exit. Output: $output" }
         return ($output -join "`n")
@@ -127,7 +147,7 @@ try {
     function Test-AzResourceId {
         param([string]$ResourceId)
         if ([string]::IsNullOrWhiteSpace($ResourceId)) { return $false }
-        & az resource show --ids $ResourceId --only-show-errors -o none 2>$null
+        Invoke-AzCli -Arguments @('resource','show','--ids',$ResourceId,'--only-show-errors','-o','none') -AllowFailure | Out-Null
         return ($LASTEXITCODE -eq 0)
     }
 
